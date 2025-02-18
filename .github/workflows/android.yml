@@ -41,12 +41,12 @@ jobs:
           name: AndroidAPS-Full-APK
           path: app/build/outputs/apk/full/debug/app-full-debug.apk
 
-      - name: Upload APK (WearOS)
+      - name: Upload APK (WearOS - Full)
         uses: actions/upload-artifact@v4
         with:
-          name: AndroidAPS-WearOS-APK
-          path: wear/build/outputs/apk/full/debug/app-full-debug.apk
-
+          name: AndroidAPS-WearOS-Full-APK
+          path: wear/build/outputs/apk/full/debug/wear-full-debug.apk
+          
   
       - name: List build output
         run: ls -R app/build/outputs/
