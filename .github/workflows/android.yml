@@ -28,21 +28,25 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build APK
-        run: ./gradlew assembleDebug
+      - name: Build APK (Mobile & WearOS)
+        run: ./gradlew assembleDebug assembleWearosDebug
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: AndroidAPS-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
-      - name: Upload Full Debug APK
+      - name: Upload Full Debug APK (Mobile)
         uses: actions/upload-artifact@v4
         with:
           name: AndroidAPS-Full-APK
           path: app/build/outputs/apk/full/debug/app-full-debug.apk
 
+      - name: Upload APK (WearOS)
+        uses: actions/upload-artifact@v4
+        with:
+          name: AndroidAPS-WearOS-APK
+          path: wear/build/outputs/apk/full/debug/app-full-debug.apk
 
+  
       - name: List build output
         run: ls -R app/build/outputs/
+
+      - name: List build output2
+        run: ls -R wear/build/outputs/
 
