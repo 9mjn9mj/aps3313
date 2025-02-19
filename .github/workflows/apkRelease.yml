@@ -32,12 +32,20 @@ jobs:
         run: |
           ./gradlew :app:assembleRelease
           ./gradlew :wear:assembleRelease
+      - name: List build output
+        run: ls -R app/build/outputs/
 
+      - name: List build output2
+        run: ls -R wear/build/outputs/
+        
       - name: Optimize APK (zipAlign)
         run: |
-          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 app/build/outputs/apk/release/app-release.apk app-release-aligned.apk
-          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 wear/build/outputs/apk/release/wear-release.apk wear-release-aligned.apk
+          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 app/build/outputs/apk/full/release/app-release.apk app-release-aligned.apk
+          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 wear/build/outputs/apk/full/release/wear-release.apk wear-release-aligned.apk
 
+          
+
+          
       - name: Upload Optimized APK (Mobile)
         uses: actions/upload-artifact@v4
         with:
@@ -51,8 +59,4 @@ jobs:
           path: wear-release-aligned.apk
 
   
-      - name: List build output
-        run: ls -R app/build/outputs/
 
-      - name: List build output2
-        run: ls -R wear/build/outputs/
