@@ -32,18 +32,38 @@ jobs:
         run: |
           ./gradlew :app:assembleRelease
           ./gradlew :wear:assembleRelease
-      - name: List build output
+
+      - name: List build output (Mobile)
         run: ls -R app/build/outputs/
 
-      - name: List build output2
+      - name: List build output (WearOS)
         run: ls -R wear/build/outputs/
-        
+
+      - name: Generate Debug Keystore (if needed)
+        run: |
+          if [ ! -f debug.keystore ]; then
+            keytool -genkeypair -v -keystore debug.keystore -storepass android -keypass android \
+              -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      - name: Sign APK (Mobile & WearOS)
+        run: |
+          ${ANDROID_HOME}/build-tools/34.0.0/apksigner sign --ks debug.keystore \
+            --ks-pass pass:android --key-pass pass:android \
+            --out app-release-signed.apk \
+            app/build/outputs/apk/full/release/app-full-release-unsigned.apk
+
+          ${ANDROID_HOME}/build-tools/34.0.0/apksigner sign --ks debug.keystore \
+            --ks-pass pass:android --key-pass pass:android \
+            --out wear-release-signed.apk \
+            wear/build/outputs/apk/full/release/wear-full-release-unsigned.apk
+
       - name: Optimize APK (zipAlign)
         run: |
-          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 app/build/outputs/apk/full/release/app-full-release-unsigned.apk app-release-aligned.apk
-          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 wear/build/outputs/apk/full/release/wear-full-release-unsigned.apk wear-release-aligned.apk
+          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 app-release-signed.apk app-release-aligned.apk
+          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 wear-release-signed.apk wear-release-aligned.apk
 
-          
       - name: Upload Optimized APK (Mobile)
         uses: actions/upload-artifact@v4
         with:
@@ -55,6 +75,3 @@ jobs:
         with:
           name: AndroidAPS-WearOS-Optimized-APK
           path: wear-release-aligned.apk
-
-  
-
