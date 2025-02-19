@@ -1,0 +1,58 @@
+name: Build AndroidAPS APK Release
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build APK (Release)
+        run: |
+          ./gradlew :app:assembleRelease
+          ./gradlew :wear:assembleRelease
+
+      - name: Optimize APK (zipAlign)
+        run: |
+          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 app/build/outputs/apk/release/app-release.apk app-release-aligned.apk
+          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 wear/build/outputs/apk/release/wear-release.apk wear-release-aligned.apk
+
+      - name: Upload Optimized APK (Mobile)
+        uses: actions/upload-artifact@v4
+        with:
+          name: AndroidAPS-Optimized-APK
+          path: app-release-aligned.apk
+
+      - name: Upload Optimized APK (WearOS)
+        uses: actions/upload-artifact@v4
+        with:
+          name: AndroidAPS-WearOS-Optimized-APK
+          path: wear-release-aligned.apk
+
+  
+      - name: List build output
+        run: ls -R app/build/outputs/
+
+      - name: List build output2
+        run: ls -R wear/build/outputs/
