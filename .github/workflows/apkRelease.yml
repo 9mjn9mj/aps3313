@@ -40,10 +40,8 @@ jobs:
         
       - name: Optimize APK (zipAlign)
         run: |
-          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 app/build/outputs/apk/full/release/app-release.apk app-release-aligned.apk
-          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 wear/build/outputs/apk/full/release/wear-release.apk wear-release-aligned.apk
-
-          
+          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 app/build/outputs/apk/full/release/app-full-release-unsigned.apk app-release-aligned.apk
+          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 wear/build/outputs/apk/full/release/wear-full-release-unsigned.apk wear-release-aligned.apk
 
           
       - name: Upload Optimized APK (Mobile)
