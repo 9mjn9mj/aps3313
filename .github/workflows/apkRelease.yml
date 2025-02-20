@@ -64,6 +64,35 @@ jobs:
           ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 app-release-signed.apk app-release-aligned.apk
           ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 wear-release-signed.apk wear-release-aligned.apk
 
+      - name: Start Emulator
+        run: |
+          echo "Starting Android Emulator..."
+          $ANDROID_HOME/emulator/emulator -avd testAVD -no-window -no-audio -no-boot-anim &
+          adb wait-for-device
+          sleep 30  # Ensure emulator is fully booted
+
+      - name: Install APK & Capture Logcat (Mobile)
+        run: |
+          adb install app-release-aligned.apk || echo "Install failed!"
+          adb logcat -d > logcat-mobile.txt
+
+      - name: Install APK & Capture Logcat (WearOS)
+        run: |
+          adb install wear-release-aligned.apk || echo "Install failed!"
+          adb logcat -d > logcat-wear.txt
+
+      - name: Upload Logcat (Mobile)
+        uses: actions/upload-artifact@v4
+        with:
+          name: logcat-mobile
+          path: logcat-mobile.txt
+
+      - name: Upload Logcat (WearOS)
+        uses: actions/upload-artifact@v4
+        with:
+          name: logcat-wear
+          path: logcat-wear.txt
+
       - name: Upload Optimized APK (Mobile)
         uses: actions/upload-artifact@v4
         with:
