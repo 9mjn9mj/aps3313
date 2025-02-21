@@ -28,16 +28,16 @@ jobs:
           -alias key \
           -keyalg RSA -keysize 2048 -validity 10000 \
           -dname "CN=Android, OU=Mobile, O=Company, L=City, ST=State, C=US" \
-          -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-          -keypass "${{ secrets.KEY_PASSWORD }}"
+          -storepass "${{ secrets.APP_KEYSTORE_PASSWORD }}" \
+          -keypass "${{ secrets.APP_KEY_PASSWORD }}"
 
         keytool -importkeystore \
           -srckeystore android-auto-key.keystore \
           -destkeystore android-auto-key.p12 \
           -srcstoretype JKS \
           -deststoretype PKCS12 \
-          -srcstorepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-          -deststorepass "${{ secrets.KEYSTORE_PASSWORD }}"
+          -srcstorepass "${{ secrets.APP_KEYSTORE_PASSWORD }}" \
+          -deststorepass "${{ secrets.APP_KEYSTORE_PASSWORD }}"
 
         # Keystore 파일을 Base64로 변환하여 GitHub Secrets에서 사용할 수 있도록 함
         base64 android-auto-key.p12 > android-auto-key.keystore.b64
