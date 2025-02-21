@@ -21,16 +21,19 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Generate Keystore
+    - name: Generate Keystore (PKCS12 Format)
       run: |
         keytool -genkeypair -v \
-          -keystore /tmp/android-auto-key.keystore \
-          -storetype JKS \
+          -keystore android-auto-key.keystore \
+          -storetype PKCS12 \  # PKCS12 형식으로 변경
           -alias key \
           -keyalg RSA -keysize 2048 -validity 10000 \
           -dname "CN=Android, OU=Mobile, O=Company, L=City, ST=State, C=US" \
           -storepass "01093030445aA" \
           -keypass "01093030445aA"
+        
+        # Keystore 파일을 Base64로 변환하여 GitHub Action에서 사용할 수 있도록 함
+        base64 android-auto-key.keystore > android-auto-key.keystore.b64
 
     - name: Build release APK
       run: ./gradlew app:assembleFullRelease
@@ -47,7 +50,7 @@ jobs:
       id: sign_app
       with:
         releaseDirectory: app/build/outputs/apk/full/release
-        signingKeyPath: /tmp/android-auto-key.keystore
+        signingKeyBase64: $(base64 android-auto-key.keystore) # Base64 인코딩된 Keystore 사용
         alias: 'key'
         keyStorePassword: "01093030445aA"
         keyPassword: "01093030445aA"
@@ -60,7 +63,8 @@ jobs:
 
     - name: Sign APK using apksigner
       run: |
-        $ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner sign --ks /tmp/android-auto-key.keystore \
+        echo "Signing with apksigner..."
+        $ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner sign --ks android-auto-key.keystore \
           --ks-key-alias key --ks-pass pass:01093030445aA \
           --key-pass pass:01093030445aA \
           --out app/build/outputs/apk/full/release/app-full-release-signed.apk \
