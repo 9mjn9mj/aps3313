@@ -9,7 +9,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -22,47 +21,44 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Generate Keystore
-      run: |
-        keytool -genkeypair -v \
-          -keystore android-auto-key.keystore \
-          -storetype JKS \
-          -alias key \
-          -keyalg RSA -keysize 2048 -validity 10000 \
-          -dname "CN=Android, OU=Mobile, O=Company, L=City, ST=State, C=US" \
-          -storepass "01093030445aA" \
-          -keypass "01093030445aA"
-
     - name: Build release APK
       run: ./gradlew app:assembleFullRelease
 
     - name: Setup build tool version variable
       shell: bash
       run: |
-        BUILD_TOOL_VERSION=$(ls /usr/local/lib/android/sdk/build-tools/ | tail -n 1)
-        echo "BUILD_TOOL_VERSION=$BUILD_TOOL_VERSION" >> $GITHUB_ENV
-        echo Last build tool version is: $BUILD_TOOL_VERSION
-        
+        BUILD_TOOLS_VERSION=$(ls /usr/local/lib/android/sdk/build-tools/ | tail -n 1)
+        echo "BUILD_TOOLS_VERSION=$BUILD_TOOLS_VERSION" >> $GITHUB_ENV
+        echo Last build tool version is: $BUILD_TOOLS_VERSION
+
     - name: Sign App
       uses: r0adkll/sign-android-release@v1
       id: sign_app
       with:
         releaseDirectory: app/build/outputs/apk/full/release
-        signingKeyPath: android-auto-key.keystore
+        signingKeyBase64: ${{ secrets.SIGNING_KEY }}
         alias: 'key'
-        keyStorePassword: '01093030445aA'
-        keyPassword: '01093030445aA'
+        keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+        keyPassword: ${{ secrets.KEY_PASSWORD }}
       env:
-        BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOL_VERSION }}
+        BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOLS_VERSION }}
 
     - name: Align APK
       run: |
         $ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/zipalign -v 4 \
           app/build/outputs/apk/full/release/app-full-release-unsigned.apk \
-          app/build/outputs/apk/full/release/app-full-release.apk
+          app/build/outputs/apk/full/release/app-full-release-aligned.apk
+
+    - name: Sign APK using apksigner
+      run: |
+        $ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner sign --ks /tmp/keystore.jks \
+          --ks-key-alias key --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
+          --key-pass pass:${{ secrets.KEY_PASSWORD }} \
+          --out app/build/outputs/apk/full/release/app-full-release-signed.apk \
+          app/build/outputs/apk/full/release/app-full-release-aligned.apk
 
     - name: Upload APK Release
       uses: actions/upload-artifact@v4
       with:
         name: APK release generated
-        path: app/build/outputs/apk/full/release
+        path: app/build/outputs/apk/full/release/app-full-release-signed.apk
