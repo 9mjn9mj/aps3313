@@ -21,19 +21,26 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Generate Keystore (PKCS12 Format)
+    - name: Generate Keystore (JKS → PKCS12)
       run: |
-        keytool -genkeypair -v\
-          -keystore android-auto-key.keystore\
-          -storetype PKCS12\ # PKCS12 형식으로 변경
-          -alias key\
-          -keyalg RSA -keysize 2048 -validity 10000\
-          -dname "CN=Android, OU=Mobile, O=Company, L=City, ST=State, C=US"\
-          -storepass "01093030445aA"\
+        keytool -genkeypair -v \
+          -keystore android-auto-key.keystore \
+          -alias key \
+          -keyalg RSA -keysize 2048 -validity 10000 \
+          -dname "CN=Android, OU=Mobile, O=Company, L=City, ST=State, C=US" \
+          -storepass "01093030445aA" \
           -keypass "01093030445aA"
-        
-        # Keystore 파일을 Base64로 변환하여 GitHub Action에서 사용할 수 있도록 함
-        base64 android-auto-key.keystore > android-auto-key.keystore.b64
+
+        keytool -importkeystore \
+          -srckeystore android-auto-key.keystore \
+          -destkeystore android-auto-key.p12 \
+          -srcstoretype JKS \
+          -deststoretype PKCS12 \
+          -srcstorepass "01093030445aA" \
+          -deststorepass "01093030445aA"
+
+        # Keystore 파일을 Base64로 변환하여 GitHub Secrets에서 사용할 수 있도록 함
+        base64 android-auto-key.p12 > android-auto-key.keystore.b64
 
     - name: Build release APK
       run: ./gradlew app:assembleFullRelease
@@ -43,30 +50,30 @@ jobs:
       run: |
         BUILD_TOOLS_VERSION=$(ls /usr/local/lib/android/sdk/build-tools/ | tail -n 1)
         echo "BUILD_TOOLS_VERSION=$BUILD_TOOLS_VERSION" >> $GITHUB_ENV
-        echo Last build tool version is: $BUILD_TOOLS_VERSION
+        echo "Last build tool version is: $BUILD_TOOLS_VERSION"
 
     - name: Sign App
       uses: r0adkll/sign-android-release@v1
       id: sign_app
       with:
         releaseDirectory: app/build/outputs/apk/full/release
-        signingKeyBase64: $(base64 android-auto-key.keystore) # Base64 인코딩된 Keystore 사용
+        signingKeyBase64: ${{ secrets.SIGNING_KEY }} # Secrets에서 Keystore 사용
         alias: 'key'
-        keyStorePassword: "01093030445aA"
-        keyPassword: "01093030445aA"
+        keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+        keyPassword: ${{ secrets.KEY_PASSWORD }}
 
     - name: Align APK
       run: |
-        $ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/zipalign -v 4 \
+        $ANDROID_SDK_ROOT/build-tools/$BUILD_TOOLS_VERSION/zipalign -v 4 \
           app/build/outputs/apk/full/release/app-full-release-unsigned.apk \
           app/build/outputs/apk/full/release/app-full-release-aligned.apk
 
     - name: Sign APK using apksigner
       run: |
         echo "Signing with apksigner..."
-        $ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner sign --ks android-auto-key.keystore \
-          --ks-key-alias key --ks-pass pass:01093030445aA \
-          --key-pass pass:01093030445aA \
+        $ANDROID_SDK_ROOT/build-tools/$BUILD_TOOLS_VERSION/apksigner sign --ks android-auto-key.keystore \
+          --ks-key-alias key --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
+          --key-pass pass:${{ secrets.KEY_PASSWORD }} \
           --out app/build/outputs/apk/full/release/app-full-release-signed.apk \
           app/build/outputs/apk/full/release/app-full-release-aligned.apk
 
