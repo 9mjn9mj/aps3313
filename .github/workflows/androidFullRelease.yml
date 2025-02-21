@@ -26,6 +26,7 @@ jobs:
       run: |
         keytool -genkeypair -v \
           -keystore android-auto-key.keystore \
+          -storetype JKS \   # ✅ JKS 형식으로 지정
           -alias key \
           -keyalg RSA -keysize 2048 -validity 10000 \
           -dname "CN=Android, OU=Mobile, O=Company, L=City, ST=State, C=US" \
@@ -34,7 +35,7 @@ jobs:
 
     - name: Base64 Encode Keystore (Optional)
       run: |
-        base64 android-auto-key.keystore > android-auto-key.keystore.b64
+        base64 -w 0 android-auto-key.keystore > android-auto-key.keystore.b64
 
     - name: Build release APK
       run: ./gradlew app:assembleFullRelease
@@ -46,6 +47,10 @@ jobs:
         echo "BUILD_TOOL_VERSION=$BUILD_TOOL_VERSION" >> $GITHUB_ENV
         echo Last build tool version is: $BUILD_TOOL_VERSION
         
+    - name: Decode Keystore for Signing
+      run: |
+        echo "${{ secrets.SIGNING_KEY }}" | base64 -d > android-auto-key.keystore
+
     - name: Sign App
       uses: r0adkll/sign-android-release@v1
       id: sign_app
@@ -69,4 +74,3 @@ jobs:
       with:
         name: APK release generated
         path: app/build/outputs/apk/full/release
-
