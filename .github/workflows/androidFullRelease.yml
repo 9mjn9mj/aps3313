@@ -24,13 +24,13 @@ jobs:
 
     - name: Generate Keystore
       run: |
-        keytool -genkeypair -v \
-          -keystore android-auto-key.keystore \
-          -storetype JKS \ 
-          -alias key \
-          -keyalg RSA -keysize 2048 -validity 10000 \
-          -dname "CN=Android, OU=Mobile, O=Company, L=City, ST=State, C=US" \
-          -storepass "01093030445aA" \
+        keytool -genkeypair -v\
+          -keystore android-auto-key.keystore\
+          -storetype JKS\
+          -alias key\
+          -keyalg RSA -keysize 2048 -validity 10000\
+          -dname "CN=Android, OU=Mobile, O=Company, L=City, ST=State, C=US"\
+          -storepass "01093030445aA"\
           -keypass "01093030445aA"
 
     - name: Base64 Encode Keystore (Optional)
