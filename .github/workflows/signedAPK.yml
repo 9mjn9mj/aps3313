@@ -62,16 +62,6 @@ jobs:
         echo "Checking APK files before signing..."
         ls -lh app/build/outputs/apk/full/release/
 
-    - name: Sign App
-      uses: r0adkll/sign-android-release@v1
-      id: sign_app
-      with:
-        releaseDirectory: app/build/outputs/apk/full/release
-        signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-        alias: ${{ secrets.ALIAS }}
-        keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
-        keyPassword: ${{ secrets.KEY_PASSWORD }}
-
     - name: Align APK
       run: |
         echo "Running zipalign..."
