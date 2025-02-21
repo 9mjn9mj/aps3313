@@ -82,7 +82,6 @@ jobs:
           --ks-key-alias ${{ secrets.ALIAS }} \
           --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
           --key-pass pass:${{ secrets.KEY_PASSWORD }} \
-          --out app/build/outputs/apk/full/release/app-full-release-signed.apk \
           app/build/outputs/apk/full/release/app-full-release-aligned.apk \
         && echo "APK signing completed successfully."
 
@@ -91,8 +90,15 @@ jobs:
         echo "Checking APK files after signing..."
         ls -lh app/build/outputs/apk/full/release/
 
+    - name: Verify Signed APK
+      run: |
+        echo "Verifying signed APK..."
+        $ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner verify \
+          --print-certs app/build/outputs/apk/full/release/app-full-release-aligned.apk \
+        && echo "APK verification successful."
+
     - name: Upload APK Release
       uses: actions/upload-artifact@v4
       with:
         name: APK release generated
-        path: app/build/outputs/apk/full/release/app-full-release-signed.apk
+        path: app/build/outputs/apk/full/release/app-full-release-aligned.apk
