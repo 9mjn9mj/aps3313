@@ -2,9 +2,9 @@ name: Android CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
   workflow_dispatch:
 
 jobs:
@@ -28,16 +28,16 @@ jobs:
           -alias key \
           -keyalg RSA -keysize 2048 -validity 10000 \
           -dname "CN=Android, OU=Mobile, O=Company, L=City, ST=State, C=US" \
-          -storepass "01093030445aA" \
-          -keypass "01093030445aA"
+          -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+          -keypass "${{ secrets.KEY_PASSWORD }}"
 
         keytool -importkeystore \
           -srckeystore android-auto-key.keystore \
           -destkeystore android-auto-key.p12 \
           -srcstoretype JKS \
           -deststoretype PKCS12 \
-          -srcstorepass "01093030445aA" \
-          -deststorepass "01093030445aA"
+          -srcstorepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+          -deststorepass "${{ secrets.KEYSTORE_PASSWORD }}"
 
         # Keystore 파일을 Base64로 변환하여 GitHub Secrets에서 사용할 수 있도록 함
         base64 android-auto-key.p12 > android-auto-key.keystore.b64
@@ -57,22 +57,23 @@ jobs:
       id: sign_app
       with:
         releaseDirectory: app/build/outputs/apk/full/release
-        signingKeyBase64: ${{ secrets.SIGNING_KEY }} # Secrets에서 Keystore 사용
-        alias: 'key'
+        signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+        alias: ${{ secrets.ALIAS }}
         keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
         keyPassword: ${{ secrets.KEY_PASSWORD }}
 
     - name: Align APK
       run: |
-        $ANDROID_SDK_ROOT/build-tools/$BUILD_TOOLS_VERSION/zipalign -v 4 \
+        $ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/zipalign -v 4 \
           app/build/outputs/apk/full/release/app-full-release-unsigned.apk \
           app/build/outputs/apk/full/release/app-full-release-aligned.apk
 
     - name: Sign APK using apksigner
       run: |
         echo "Signing with apksigner..."
-        $ANDROID_SDK_ROOT/build-tools/$BUILD_TOOLS_VERSION/apksigner sign --ks android-auto-key.keystore \
-          --ks-key-alias key --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
+        $ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner sign --ks android-auto-key.keystore \
+          --ks-key-alias ${{ secrets.ALIAS }} \
+          --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
           --key-pass pass:${{ secrets.KEY_PASSWORD }} \
           --out app/build/outputs/apk/full/release/app-full-release-signed.apk \
           app/build/outputs/apk/full/release/app-full-release-aligned.apk
